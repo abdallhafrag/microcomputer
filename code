@@ -1,0 +1,192 @@
+
+module BasicComputer(IR,TR,DR,AC,PC,AR,clk,Sq);
+
+input clk;
+output reg [15:0] IR,TR,DR,AC;
+output reg [11:0] PC,AR;
+
+reg [15:0] MEM [255:0]; //256memory loation *16-bit lenght addressed by 8-bit address
+reg J;
+reg E;
+output reg [3:0] Sq; 
+
+
+initial
+begin
+Sq <= 0;     // less than or equal
+IR <= 0;
+TR <= 0;
+DR <= 0;
+AC <= 0;
+PC <= 0;
+AR <= 0;
+J <= 0;
+E <= 0;
+$readmemh("D:\farrag\MEM.txt", MEM); //read memmory 
+end
+
+always @(posedge clk)
+begin 
+
+	if (Sq == 0) begin	//sq equl 0 and result un unkown=T0
+		AR <= PC;
+		Sq <= Sq + 1; 
+		end
+		
+
+	else
+	 if (Sq == 1) begin //sq equl 1 and result un unkown=T1
+	
+		IR <= MEM[AR[7:0]]; 
+		PC <= PC + 1;		
+		Sq <= Sq + 1;
+		 end
+
+	else 
+	if (Sq == 2) begin        //sq equl 2 and result un unkown=T2
+		AR <= IR[11:0];
+		J <= IR[15];
+		Sq <= Sq +1; end
+	
+
+	else
+	 begin
+		if (IR[14:12] == 3'b111) begin
+
+			if(J == 0) begin// Register reference instructions
+
+				if(AR[11:0] == 12'b100000000000) begin//CLA
+					AC <= 0;
+					Sq <= 0; end
+
+				else if(AR[10:0] == 12'b010000000000) begin//CLE
+					E <= 0;
+					Sq <= 0; end
+
+					else if(AR[9:0] == 12'b001000000000) begin //CMA
+					AC <= ~AC;
+					Sq <= 0; end
+
+					else if(AR[8:0] == 12'b000100000000) begin//CME
+					E <= ~E;
+					Sq <= 0; end
+
+					else if(AR[7:0] == 12'b00001000000) begin //INC
+					AC <= AC + 1;
+					Sq <= 0; end
+			end
+		end		
+		else begin 
+			if(J == 1) begin  // indirect
+				if (Sq == 3) begin
+					AR <= MEM[AR[7:0]]; 
+					Sq <= Sq + 1; end
+				else begin
+					if(IR[14:12] == 3'b000) begin //AND
+						if(Sq == 4) begin
+							DR <= MEM[AR[7:0]]; 
+							Sq <= Sq + 1; end
+						else begin
+							AC <= (AC & DR);
+							Sq <= 0; end
+					end
+					else if(IR[14:12] == 3'b001) begin //ADD 
+						if(Sq == 4) begin
+							DR <= MEM[AR[7:0]]; 
+							Sq <= Sq + 1; end
+						else begin
+							{E,AC} <= AC + DR;
+							Sq <= 0; end
+					end
+					else if(IR[14:12] == 3'b010) begin //LDA
+						if(Sq == 4) begin
+							DR <= MEM[AR[7:0]]; 
+							Sq <= Sq + 1; end
+						else begin
+							AC <= DR;
+							Sq <= 0; end
+					end		
+					else if(IR[14:12] == 3'b011) begin//STA
+						MEM[AR[7:0]] <= AC ; 
+						Sq <= 0;
+					end
+					
+						
+					else if(IR[14:12] == 3'b110) begin //ISZ
+						if (Sq == 4) begin
+							DR <= MEM[AR[7:0]]; 
+							Sq <= Sq +1; end
+						else if(Sq ==5) begin
+							DR <= DR +1;
+							Sq <= Sq +1; end
+						else begin
+							MEM[AR[7:0]] <= DR; 
+								if(DR == 0)
+									PC <= PC +1;
+							Sq <= Sq +1; end
+				   end
+			   end
+			end
+			if(J == 0) begin                // direct
+				if (Sq == 3)
+					Sq <= Sq + 1; 
+				else begin
+					if(IR[14:12] == 3'b000) begin //AND
+						if(Sq == 4) begin
+							DR <= MEM[AR[7:0]]; 
+							Sq <= Sq + 1; end
+						else begin
+							AC <= (AC & DR);
+							Sq <= 0; end
+					end
+					else if(IR[14:12] == 3'b001) begin//ADD
+						if(Sq == 4) begin
+							DR <= MEM[AR[7:0]];
+							Sq <= Sq + 1; end
+						else begin
+							{E,AC} <= AC + DR;
+							Sq <= 0; end
+					end		
+					else if(IR[14:12] == 3'b010) begin//LDA
+						if(Sq == 4) begin
+							DR <= MEM[AR[7:0]];
+							Sq <= Sq + 1; end
+						else begin
+							AC <= DR;
+							Sq <= 0; end
+					end		
+					else if(IR[14:12] == 3'b011) begin //STA
+						MEM[AR[7:0]] <= AC ; 
+						Sq <= 0;
+					end
+					else if(IR[14:12] == 3'b100) begin //BUN
+						PC <= AR;
+						Sq <= 0;
+					end
+					else if(IR[14:12] == 3'b101) begin //BSA
+						if (Sq == 4) begin
+							MEM[AR[7:0]] <= PC; 
+							AR <= AR + 1; end
+						else begin
+							PC <= AR;
+							Sq <= 0; end
+					end		
+					else if(IR[14:12] == 3'b110) begin //ISZ
+						if (Sq == 4) begin
+							DR <= MEM[AR[7:0]]; 
+							Sq <= Sq +1; end
+						else if(Sq ==5) begin
+							DR <= DR +1;
+							Sq <= Sq +1; end
+						else  begin
+							MEM[AR[7:0]] <= DR;
+								if(DR == 0)
+									PC <= PC +1;
+							Sq <= Sq +1; end
+					end
+				end
+			end
+		end 		
+	end 
+end
+endmodule		
