@@ -159,15 +159,9 @@ begin
 						MEM[AR[7:0]] <= AC ; 
 						Sq <= 0;
 					end
-					else if(IR[14:12] == 3'b100) begin //BUN
-						PC <= AR;
-						Sq <= 0;
-					end
-					else if(IR[14:12] == 3'b101) begin //BSA
-						if (Sq == 4) begin
-							MEM[AR[7:0]] <= PC; 
-							AR <= AR + 1; end
-						else begin
+				
+				
+					
 							PC <= AR;
 							Sq <= 0; end
 					end		
@@ -187,6 +181,6 @@ begin
 				end
 			end
 		end 		
-	end 
-end
+	
+
 endmodule		
